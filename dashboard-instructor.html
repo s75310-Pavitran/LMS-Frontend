@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instructor Dashboard — UMT LMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Cloudinary Upload Widget -->
+  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <!-- Navbar -->
+  <nav class="bg-white shadow-sm px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
+        <span class="text-white font-bold">U</span>
+      </div>
+      <span class="font-bold text-slate-800">UMT LMS</span>
+      <span class="text-xs bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-semibold ml-2">Instructor</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="userName" class="text-sm text-slate-600 font-medium"></span>
+      <button onclick="logout()" class="text-sm font-semibold text-red-500 hover:text-red-700">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Tab Nav -->
+  <div class="bg-white border-b border-slate-100 px-8">
+    <div class="flex gap-0 max-w-6xl mx-auto overflow-x-auto">
+      <button onclick="showTab('courses')" id="tab-courses"
+        class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-violet-600 text-violet-600 whitespace-nowrap">
+        My Courses
+      </button>
+      <button onclick="showTab('create')" id="tab-create"
+        class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">
+        Create Course
+      </button>
+      <button onclick="showTab('submissions')" id="tab-submissions"
+        class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap">
+        📥 Submissions
+      </button>
+    </div>
+  </div>
+
+  <main class="max-w-6xl mx-auto p-8">
+
+    <!-- My Courses -->
+    <div id="pane-courses">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-slate-800">My Courses</h2>
+        <button onclick="loadMyCourses()" class="text-sm text-violet-600 font-semibold hover:underline">↻ Refresh</button>
+      </div>
+      <div id="my-courses-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+    </div>
+
+    <!-- Create Course -->
+    <div id="pane-create" class="hidden max-w-2xl">
+      <h2 class="text-2xl font-extrabold text-slate-800 mb-6">Create New Course</h2>
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+        <div>
+          <label class="text-sm font-semibold text-slate-600 block mb-1">Course Title *</label>
+          <input id="c-title" type="text" placeholder="e.g. Introduction to Python"
+            class="w-full border border-slate-200 p-3 rounded-lg text-sm focus:ring-2 focus:ring-violet-400 outline-none">
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-600 block mb-1">Description *</label>
+          <textarea id="c-desc" placeholder="What will students learn?"
+            class="w-full border border-slate-200 p-3 rounded-lg text-sm h-28 focus:ring-2 focus:ring-violet-400 outline-none resize-none"></textarea>
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-600 block mb-1">Category</label>
+          <input id="c-cat" type="text" placeholder="e.g. Programming, Math, Science"
+            class="w-full border border-slate-200 p-3 rounded-lg text-sm focus:ring-2 focus:ring-violet-400 outline-none">
+        </div>
+        <button onclick="createCourse()"
+          class="w-full bg-violet-600 text-white py-3 rounded-lg font-bold hover:bg-violet-700 transition shadow-lg shadow-violet-100">
+          Create Course
+        </button>
+        <p id="create-status" class="text-center text-sm font-semibold"></p>
+      </div>
+    </div>
+
+
+    <!-- Submissions Pane -->
+    <div id="pane-submissions" class="hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-slate-800">Student Submissions</h2>
+        <button onclick="loadSubmissions()" class="text-sm text-violet-600 font-semibold hover:underline">↻ Refresh</button>
+      </div>
+      <div id="submissions-filter" class="mb-4"></div>
+      <div id="submissions-list"></div>
+    </div>
+
+  </main>
+
+  <!-- ── Edit Course Modal ─────────────────────────────────────────── -->
+  <div id="edit-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+      <h3 class="text-lg font-bold text-slate-800 mb-4">Edit Course</h3>
+      <label class="text-xs font-semibold text-slate-500 block mb-1">Title</label>
+      <input id="edit-title" type="text" placeholder="Course Title"
+        class="w-full border p-3 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-violet-400 outline-none">
+      <label class="text-xs font-semibold text-slate-500 block mb-1">Description</label>
+      <textarea id="edit-desc" placeholder="Description"
+        class="w-full border p-3 rounded-lg text-sm h-24 mb-3 focus:ring-2 focus:ring-violet-400 outline-none resize-none"></textarea>
+      <label class="text-xs font-semibold text-slate-500 block mb-1">Category</label>
+      <input id="edit-cat" type="text" placeholder="Category"
+        class="w-full border p-3 rounded-lg text-sm mb-3 focus:ring-2 focus:ring-violet-400 outline-none">
+      <input id="edit-id" type="hidden">
+      <div class="flex gap-3">
+        <button onclick="submitEdit()" class="flex-1 bg-violet-600 text-white py-2 rounded-lg font-bold hover:bg-violet-700">Save</button>
+        <button onclick="closeEdit()" class="flex-1 border border-slate-200 text-slate-600 py-2 rounded-lg font-bold hover:bg-slate-50">Cancel</button>
+      </div>
+      <p id="edit-status" class="text-center text-sm font-semibold mt-3"></p>
+    </div>
+  </div>
+
+  <!-- ── Manage Modules Modal ──────────────────────────────────────── -->
+  <div id="modules-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-1">
+        <h3 class="text-lg font-bold text-slate-800">Manage Learning Modules</h3>
+        <button onclick="closeModulesModal()" class="text-slate-400 hover:text-slate-700 text-2xl">×</button>
+      </div>
+      <p id="mm-course-title" class="text-sm text-slate-500 mb-4"></p>
+      <input id="mm-course-id" type="hidden">
+
+      <!-- Existing modules list -->
+      <div id="mm-list" class="space-y-4 mb-6"></div>
+
+      <!-- Add new module section -->
+      <div class="border-t pt-5">
+        <h4 class="text-sm font-bold text-slate-700 mb-3">+ Add New Module</h4>
+        <input id="mm-new-title" type="text" placeholder="Module title *"
+          class="w-full border border-slate-200 p-2 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-violet-400 outline-none">
+        <textarea id="mm-new-content" placeholder="Module description / text notes (optional)"
+          class="w-full border border-slate-200 p-2 rounded-lg text-sm h-20 mb-2 focus:ring-2 focus:ring-violet-400 outline-none resize-none"></textarea>
+        <button onclick="addModule()"
+          class="w-full bg-violet-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-violet-700">
+          Add Module to Course
+        </button>
+        <p id="mm-status" class="text-center text-sm font-semibold mt-2"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Module Media Upload Modal ──────────────────────────────────── -->
+  <div id="media-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 flex">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-bold text-slate-800">📎 Module Resources</h3>
+        <button onclick="closeMediaModal()" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+      </div>
+      <p id="media-module-name" class="text-sm text-violet-600 font-semibold mb-4"></p>
+      <input id="media-course-id" type="hidden">
+      <input id="media-module-id" type="hidden">
+
+      <!-- Upload buttons -->
+      <div class="mb-5">
+        <p class="text-xs font-semibold text-slate-500 mb-2">Upload resources for students:</p>
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="openCloudinaryUpload('note')"
+            class="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100">
+            📄 Upload Note (PDF/DOC)
+          </button>
+          <button onclick="openCloudinaryUpload('image')"
+            class="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold hover:bg-emerald-100">
+            🖼️ Upload Image
+          </button>
+          <button onclick="openCloudinaryUpload('video')"
+            class="flex items-center gap-1.5 px-3 py-2 bg-orange-50 text-orange-600 rounded-lg text-xs font-bold hover:bg-orange-100">
+            🎬 Upload Video
+          </button>
+        </div>
+        <div id="upload-status" class="text-xs text-slate-400 mt-2 hidden">
+          <span class="inline-block animate-pulse">⏳ Uploading to Cloudinary...</span>
+        </div>
+        <p id="media-upload-msg" class="text-sm font-semibold mt-2"></p>
+      </div>
+
+      <!-- Existing media list -->
+      <div>
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Current Resources</p>
+        <div id="media-list" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script>
+    const API   = window.API_URL;
+    const token = localStorage.getItem('lms_token');
+    const user  = JSON.parse(localStorage.getItem('lms_user') || 'null');
+
+    // ── Cloudinary config ──────────────────────────────────────────────
+    const CLOUDINARY_CLOUD_NAME    = window.CLOUDINARY_CLOUD_NAME;
+    const CLOUDINARY_UPLOAD_PRESET = window.CLOUDINARY_UPLOAD_PRESET;
+
+    if (!user || user.role !== 'instructor') {
+      localStorage.clear(); window.location.href = 'index.html';
+    }
+    document.getElementById('userName').innerText = user.name;
+
+    // ── Tabs ────────────────────────────────────────────────────────────
+    function showTab(tab) {
+      ['courses','create','submissions'].forEach(t => {
+        document.getElementById('pane-' + t).classList.add('hidden');
+        document.getElementById('tab-' + t).className =
+          'tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 whitespace-nowrap';
+      });
+      document.getElementById('pane-' + tab).classList.remove('hidden');
+      document.getElementById('tab-' + tab).className =
+        'tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-violet-600 text-violet-600 whitespace-nowrap';
+      if (tab === 'courses')      loadMyCourses();
+      if (tab === 'submissions')  loadSubmissions();
+    }
+
+    function escapeQ(s) {
+      return (s || '').replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    }
+
+    // ── My Courses ──────────────────────────────────────────────────────
+    async function loadMyCourses() {
+      const list = document.getElementById('my-courses-list');
+      list.innerHTML = '<p class="col-span-2 text-slate-400 text-center py-10">Loading...</p>';
+      try {
+        const res     = await fetch(`${API}/courses/my`, { headers: { Authorization: `Bearer ${token}` } });
+        const courses = await res.json();
+        if (!courses.length) {
+          list.innerHTML = `<div class="col-span-2 text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+            <p class="text-slate-400">No courses yet.</p>
+            <button onclick="showTab('create')" class="mt-3 text-sm font-bold text-violet-600 hover:underline">Create your first course →</button>
+          </div>`;
+          return;
+        }
+        list.innerHTML = courses.map(c => `
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <div class="flex justify-between items-start mb-3">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${c.isArchived ? 'bg-red-50 text-red-600' : c.isPublished ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}">
+                ${c.isArchived ? 'Archived' : c.isPublished ? 'Published' : 'Draft'}
+              </span>
+              <span class="text-xs text-slate-400">${c.enrolledStudents?.length || 0} students</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">${c.title}</h3>
+            <p class="text-sm text-slate-500 mt-1 line-clamp-2">${c.description}</p>
+            <p class="text-xs text-slate-400 mt-2">${c.modules?.length || 0} modules · ${c.quizzes?.length || 0} quizzes</p>
+            ${c.isArchived ? `<p class="text-xs text-red-500 mt-2">⚠ Archived by admin: ${c.archiveReason || 'Policy violation'}</p>` : ''}
+            <div class="mt-4 pt-4 border-t border-slate-50 flex gap-2 flex-wrap">
+              <button onclick="openEdit('${c._id}','${escapeQ(c.title)}','${escapeQ(c.description)}','${escapeQ(c.category||'')}')"
+                class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">Edit</button>
+              <button onclick="openModulesModal('${c._id}','${escapeQ(c.title)}')"
+                class="text-xs font-bold px-3 py-1.5 rounded-lg bg-violet-50 text-violet-600 hover:bg-violet-100">Manage Modules</button>
+              <button onclick="togglePublish('${c._id}')" ${c.isArchived ? 'disabled' : ''}
+                class="text-xs font-bold px-3 py-1.5 rounded-lg ${c.isArchived ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : c.isPublished ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}">
+                ${c.isPublished ? 'Unpublish' : 'Publish'}
+              </button>
+              <button onclick="deleteCourse('${c._id}')"
+                class="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '<p class="col-span-2 text-center text-red-500">Failed to load courses.</p>';
+      }
+    }
+
+    // ── Create Course ───────────────────────────────────────────────────
+    async function createCourse() {
+      const title = document.getElementById('c-title').value.trim();
+      const desc  = document.getElementById('c-desc').value.trim();
+      const cat   = document.getElementById('c-cat').value.trim();
+      const st    = document.getElementById('create-status');
+      if (!title || !desc) { st.textContent = '⚠ Title and description required.'; st.className = 'text-center text-sm font-semibold text-amber-500'; return; }
+      try {
+        st.textContent = 'Creating...'; st.className = 'text-center text-sm font-semibold text-slate-400';
+        const res = await fetch(`${API}/courses/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ title, description: desc, category: cat, modules: [] })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          st.textContent = '✓ Course created!'; st.className = 'text-center text-sm font-semibold text-emerald-600';
+          document.getElementById('c-title').value = '';
+          document.getElementById('c-desc').value = '';
+          document.getElementById('c-cat').value = '';
+        } else {
+          st.textContent = data.message || 'Error.'; st.className = 'text-center text-sm font-semibold text-red-500';
+        }
+      } catch { st.textContent = 'Network error.'; st.className = 'text-center text-sm font-semibold text-red-500'; }
+    }
+
+    // ── Edit Course ─────────────────────────────────────────────────────
+    function openEdit(id, title, desc, cat) {
+      document.getElementById('edit-id').value    = id;
+      document.getElementById('edit-title').value = title;
+      document.getElementById('edit-desc').value  = desc;
+      document.getElementById('edit-cat').value   = cat;
+      document.getElementById('edit-status').textContent = '';
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+    function closeEdit() { document.getElementById('edit-modal').classList.add('hidden'); }
+
+    async function submitEdit() {
+      const id    = document.getElementById('edit-id').value;
+      const title = document.getElementById('edit-title').value.trim();
+      const desc  = document.getElementById('edit-desc').value.trim();
+      const cat   = document.getElementById('edit-cat').value.trim();
+      const st    = document.getElementById('edit-status');
+      try {
+        const res = await fetch(`${API}/courses/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ title, description: desc, category: cat })
+        });
+        if (res.ok) { st.textContent = '✓ Saved!'; st.className = 'text-center text-sm font-semibold text-emerald-600'; loadMyCourses(); }
+        else { st.textContent = 'Error.'; st.className = 'text-center text-sm font-semibold text-red-500'; }
+      } catch { st.textContent = 'Network error.'; st.className = 'text-center text-sm font-semibold text-red-500'; }
+    }
+
+    async function togglePublish(id) {
+      await fetch(`${API}/courses/${id}/publish`, {
+        method: 'PATCH', headers: { Authorization: `Bearer ${token}` }
+      });
+      loadMyCourses();
+    }
+
+    async function deleteCourse(id) {
+      if (!confirm('Delete this course? This cannot be undone.')) return;
+      await fetch(`${API}/courses/${id}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      });
+      loadMyCourses();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  MANAGE MODULES MODAL
+    // ══════════════════════════════════════════════════════════════════
+
+    async function openModulesModal(courseId, title) {
+      document.getElementById('mm-course-id').value = courseId;
+      document.getElementById('mm-course-title').textContent = title;
+      document.getElementById('mm-new-title').value = '';
+      document.getElementById('mm-new-content').value = '';
+      document.getElementById('mm-status').textContent = '';
+      document.getElementById('modules-modal').classList.remove('hidden');
+      await refreshModulesList(courseId);
+    }
+    function closeModulesModal() { document.getElementById('modules-modal').classList.add('hidden'); }
+
+    async function refreshModulesList(courseId) {
+      const list = document.getElementById('mm-list');
+      list.innerHTML = '<p class="text-slate-400 text-sm text-center py-4">Loading modules...</p>';
+      try {
+        const res    = await fetch(`${API}/courses/${courseId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const course = await res.json();
+        const mods   = course.modules || [];
+        if (!mods.length) { list.innerHTML = '<p class="text-sm text-slate-400 italic py-2">No modules yet. Add one below.</p>'; return; }
+        list.innerHTML = mods.map(m => `
+          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+            <div class="flex justify-between items-start gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-800">${m.title}</p>
+                ${m.content ? `<p class="text-xs text-slate-500 mt-1 line-clamp-2">${m.content}</p>` : ''}
+                ${(m.media||[]).length
+                  ? `<div class="flex flex-wrap gap-1.5 mt-2">${(m.media||[]).map(med => `
+                      <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
+                        med.type==='note'?'bg-blue-100 text-blue-700':med.type==='image'?'bg-emerald-100 text-emerald-700':'bg-orange-100 text-orange-700'
+                      }">
+                        ${{note:'📄',image:'🖼️',video:'🎬'}[med.type]} ${med.title}
+                      </span>`).join('')}</div>`
+                  : '<p class="text-xs text-slate-400 mt-1">No resources uploaded yet</p>'}
+              </div>
+              <div class="flex gap-2 shrink-0">
+                <button onclick="openMediaModal('${courseId}','${m._id}','${escapeQ(m.title)}')"
+                  class="text-xs font-bold px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100">📎 Resources</button>
+                <button onclick="deleteModule('${courseId}','${m._id}')"
+                  class="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100">Remove</button>
+              </div>
+            </div>
+          </div>`).join('');
+      } catch { list.innerHTML = '<p class="text-sm text-red-400">Failed to load.</p>'; }
+    }
+
+    async function addModule() {
+      const courseId = document.getElementById('mm-course-id').value;
+      const title    = document.getElementById('mm-new-title').value.trim();
+      const content  = document.getElementById('mm-new-content').value.trim();
+      const st       = document.getElementById('mm-status');
+      if (!title) { st.textContent = '⚠ Title required.'; st.className = 'text-amber-500 text-sm font-semibold'; return; }
+      try {
+        const res = await fetch(`${API}/courses/${courseId}/modules`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ title, content })
+        });
+        if (res.ok) {
+          st.textContent = '✓ Module added!'; st.className = 'text-emerald-600 text-sm font-semibold';
+          document.getElementById('mm-new-title').value = '';
+          document.getElementById('mm-new-content').value = '';
+          await refreshModulesList(courseId);
+        } else { st.textContent = 'Error.'; st.className = 'text-red-500 text-sm font-semibold'; }
+      } catch { st.textContent = 'Network error.'; st.className = 'text-red-500 text-sm font-semibold'; }
+    }
+
+    async function deleteModule(courseId, moduleId) {
+      if (!confirm('Remove this module and all its resources?')) return;
+      await fetch(`${API}/courses/${courseId}/modules/${moduleId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      });
+      await refreshModulesList(courseId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    //  MODULE MEDIA / RESOURCES MODAL
+    // ══════════════════════════════════════════════════════════════════
+
+    let _mediaCourseId  = null;
+    let _mediaModuleId  = null;
+    let _mediaUploadType = null;
+
+    async function openMediaModal(courseId, moduleId, moduleTitle) {
+      _mediaCourseId = courseId;
+      _mediaModuleId = moduleId;
+      document.getElementById('media-course-id').value = courseId;
+      document.getElementById('media-module-id').value = moduleId;
+      document.getElementById('media-module-name').textContent = moduleTitle;
+      document.getElementById('media-upload-msg').textContent = '';
+      document.getElementById('upload-status').classList.add('hidden');
+      document.getElementById('media-modal').classList.remove('hidden');
+      await refreshMediaList();
+    }
+
+    function closeMediaModal() {
+      document.getElementById('media-modal').classList.add('hidden');
+      // Refresh modules list to show updated media count
+      const courseId = document.getElementById('mm-course-id').value;
+      if (courseId) refreshModulesList(courseId);
+      _mediaCourseId = null;
+      _mediaModuleId = null;
+    }
+
+    async function refreshMediaList() {
+      const listEl = document.getElementById('media-list');
+      listEl.innerHTML = '<p class="text-xs text-slate-400">Loading resources...</p>';
+      try {
+        const res    = await fetch(`${API}/courses/${_mediaCourseId}`, { headers: { Authorization: `Bearer ${token}` } });
+        const course = await res.json();
+        const mod    = course.modules?.find(m => m._id === _mediaModuleId);
+        const media  = mod?.media || [];
+        if (!media.length) {
+          listEl.innerHTML = '<p class="text-sm text-slate-400 italic">No resources uploaded yet. Use the buttons above to add notes, images, or videos.</p>';
+          return;
+        }
+        listEl.innerHTML = media.map(m => `
+          <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <span class="text-xl">${{note:'📄',image:'🖼️',video:'🎬'}[m.type]}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-slate-700 truncate">${m.title}</p>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full ${
+                  m.type==='note'?'bg-blue-100 text-blue-600':m.type==='image'?'bg-emerald-100 text-emerald-600':'bg-orange-100 text-orange-600'
+                }">${m.type}</span>
+                ${m.format ? `<span class="text-xs text-slate-400">.${m.format}</span>` : ''}
+              </div>
+            </div>
+            <div class="flex gap-2 shrink-0">
+              <a href="javascript:void(0)" onclick="openMedia('${m.url}','${m.publicId||''}','${m.type==='note'?'raw':m.type}','${m.format||''}')" class="text-xs font-bold text-indigo-500 hover:text-indigo-700">View</a>
+              <button onclick="removeMedia('${m._id}')" class="text-xs font-bold text-red-400 hover:text-red-600">Remove</button>
+            </div>
+          </div>`).join('');
+      } catch { listEl.innerHTML = '<p class="text-xs text-red-400">Failed to load resources.</p>'; }
+    }
+
+    // ── Cloudinary Upload ───────────────────────────────────────────────
+    function openCloudinaryUpload(mediaType) {
+      _mediaUploadType = mediaType;
+      const resourceType = mediaType === 'video' ? 'video' : (mediaType === 'image' ? 'image' : 'raw');
+      const clientAllowedFormats = {
+        note:  ['pdf','doc','docx','ppt','pptx','xls','xlsx','txt'],
+        image: ['jpg','jpeg','png','gif','webp','svg'],
+        video: ['mp4','mov','avi','mkv','webm'],
+      }[mediaType];
+
+      const uploadStatusEl = document.getElementById('upload-status');
+
+      const widget = cloudinary.createUploadWidget({
+        cloudName:      CLOUDINARY_CLOUD_NAME,
+        uploadPreset:   CLOUDINARY_UPLOAD_PRESET,
+        resourceType:   resourceType,
+        clientAllowedFormats,
+        multiple:       false,
+        folder:         `lms/modules/${_mediaCourseId}`,
+        sources:        ['local','url','camera'],
+        showAdvancedOptions: false,
+        cropping:       false,
+        styles: {
+          palette: {
+            window: '#FFFFFF',
+            windowBorder: '#90A0B3',
+            tabIcon: '#7C3AED',
+            menuIcons: '#5A616A',
+            textDark: '#1E293B',
+            textLight: '#FFFFFF',
+            link: '#7C3AED',
+            action: '#7C3AED',
+            inactiveTabIcon: '#94A3B8',
+            error: '#F43F5E',
+            inProgress: '#7C3AED',
+            complete: '#10B981',
+            sourceBg: '#F8FAFC',
+          }
+        }
+      }, async (error, result) => {
+        if (error) {
+          console.error('Cloudinary error:', error);
+          document.getElementById('media-upload-msg').textContent = '❌ Upload failed. Check console.';
+          document.getElementById('media-upload-msg').style.color = '#ef4444';
+          return;
+        }
+        if (result.event === 'upload-added') {
+          uploadStatusEl.classList.remove('hidden');
+        }
+        if (result.event === 'success') {
+          uploadStatusEl.classList.add('hidden');
+          const info  = result.info;
+          const title = prompt(`Enter a title for this ${mediaType}:`, info.original_filename || info.public_id.split('/').pop()) || info.original_filename || 'Untitled';
+          try {
+            const res = await fetch(`${API}/courses/${_mediaCourseId}/modules/${_mediaModuleId}/media`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                type:     mediaType,
+                title,
+                url:      info.secure_url,
+                publicId: info.public_id,
+                format:   info.format || '',
+              })
+            });
+            if (res.ok) {
+              document.getElementById('media-upload-msg').textContent = `✓ ${mediaType} uploaded successfully!`;
+              document.getElementById('media-upload-msg').style.color = '#10b981';
+              await refreshMediaList();
+            } else {
+              const err = await res.json();
+              document.getElementById('media-upload-msg').textContent = `❌ ${err.message || 'Upload failed.'}`;
+              document.getElementById('media-upload-msg').style.color = '#ef4444';
+            }
+          } catch (e) {
+            document.getElementById('media-upload-msg').textContent = `❌ Network error: ${e.message}`;
+            document.getElementById('media-upload-msg').style.color = '#ef4444';
+          }
+        }
+      });
+      widget.open();
+    }
+
+    async function removeMedia(mediaId) {
+      if (!confirm('Remove this resource?')) return;
+      const res = await fetch(`${API}/courses/${_mediaCourseId}/modules/${_mediaModuleId}/media/${mediaId}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) await refreshMediaList();
+    }
+
+    // ── Open media: signed URL for raw/PDF, direct URL for image/video ──
+    // Detect PDF by URL or format extension
+    function isPdf(url) {
+      return /\.pdf($|\?)/i.test(url) || /\/raw\/upload\//i.test(url);
+    }
+
+    // Open media safely:
+    //  - PDFs → get signed URL then open via Google Docs viewer (avoids browser
+    //    "Failed to load PDF" caused by Cloudinary's Content-Disposition header)
+    //  - images/videos → open direct Cloudinary URL in new tab
+    async function openMedia(url, publicId, resourceType, format) {
+      let finalUrl = url;
+
+      if (resourceType === 'raw' && publicId) {
+        try {
+          const r = await fetch(
+            `${API}/courses/media/signed-url?publicId=${encodeURIComponent(publicId)}&resourceType=raw`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (r.ok) {
+            const data = await r.json();
+            finalUrl = data.url;
+          }
+        } catch (e) { /* use original url as fallback */ }
+      }
+
+      // PDFs: use Google Docs viewer so the browser never tries to embed directly
+      const looksLikePdf = (format && format.toLowerCase() === 'pdf') ||
+                           isPdf(publicId || '') ||
+                           isPdf(finalUrl);
+      if (looksLikePdf) {
+        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(finalUrl)}&embedded=false`;
+        window.open(viewerUrl, '_blank');
+        return;
+      }
+
+      window.open(finalUrl, '_blank');
+    }
+
+
+    // ── Submissions ──────────────────────────────────────────────────────
+    let _allSubmissionCourses = [];
+
+    async function loadSubmissions() {
+      const listEl   = document.getElementById('submissions-list');
+      const filterEl = document.getElementById('submissions-filter');
+      listEl.innerHTML = '<p class="text-slate-400 text-center py-10">Loading submissions…</p>';
+      filterEl.innerHTML = '';
+
+      try {
+        // 1. Get instructor's courses
+        const res     = await fetch(`${API}/courses/my`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const courses = await res.json();
+        _allSubmissionCourses = courses;
+
+        if (!courses.length) {
+          listEl.innerHTML = `<div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+            <p class="text-slate-400">No courses found.</p>
+          </div>`;
+          return;
+        }
+
+        // 2. Build course filter dropdown
+        filterEl.innerHTML = `
+          <div class="flex items-center gap-3 mb-4">
+            <label class="text-sm font-semibold text-slate-600">Filter by course:</label>
+            <select id="sub-course-filter" onchange="renderSubmissionsForCourse()"
+              class="border border-slate-200 px-3 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-400 min-w-[240px]">
+              <option value="all">All Courses</option>
+              ${courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('')}
+            </select>
+          </div>`;
+
+        // 3. Load all submissions across all courses
+        const submissionsPromises = courses.map(c =>
+          fetch(`${API}/progress/instructor/course/${c._id}/submissions`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }).then(r => r.json()).catch(() => ({ submissions: [] }))
+        );
+        const results = await Promise.all(submissionsPromises);
+
+        // Attach courseId to results
+        window._submissionsData = results.map((r, i) => ({
+          courseId:    courses[i]._id,
+          courseTitle: courses[i].title,
+          submissions: r.submissions || [],
+        }));
+
+        renderSubmissionsForCourse();
+      } catch (err) {
+        listEl.innerHTML = `<p class="text-center text-red-500">Failed to load: ${err.message}</p>`;
+      }
+    }
+
+    function renderSubmissionsForCourse() {
+      const listEl  = document.getElementById('submissions-list');
+      const filter  = document.getElementById('sub-course-filter')?.value || 'all';
+      const data    = window._submissionsData || [];
+
+      const filtered = filter === 'all'
+        ? data
+        : data.filter(d => d.courseId === filter);
+
+      const allSubs = filtered.flatMap(d =>
+        d.submissions.map(s => ({
+          ...s,
+          courseTitle: d.courseTitle,
+          courseId: d.courseId,
+        }))
+      );
+
+      if (!allSubs.length) {
+        listEl.innerHTML = `<div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+          <p class="text-slate-400 text-2xl mb-2">📭</p>
+          <p class="text-slate-500 font-semibold">No submissions yet.</p>
+        </div>`;
+        return;
+      }
+
+      // Group by student
+      const byStudent = {};
+      allSubs.forEach(s => {
+        const sid = s.student?._id || s.student;
+        if (!byStudent[sid]) byStudent[sid] = { student: s.student, entries: [] };
+        s.assignments.forEach(a => {
+          byStudent[sid].entries.push({ ...a, courseTitle: s.courseTitle, courseId: s.courseId });
+        });
+      });
+
+      listEl.innerHTML = Object.values(byStudent).map(({ student, entries }) => {
+        const name  = student?.name  || 'Unknown';
+        const email = student?.email || '';
+        const rows  = entries.map(a => {
+          const date = new Date(a.submittedAt).toLocaleDateString('en-MY', {
+            day: '2-digit', month: 'short', year: 'numeric',
+          });
+          const ext = a.format ? a.format.toUpperCase() : 'FILE';
+          const icon = ext === 'PDF' ? '📄' : ext.match(/DOC/) ? '📝' : ext.match(/XLS/) ? '📊' : ext.match(/PPT/) ? '📊' : ext.match(/ZIP/) ? '🗜️' : ext.match(/JPG|JPEG|PNG/) ? '🖼️' : '📎';
+          const dlName = a.originalName || `${a.title.replace(/\s+/g,'_')}.${(a.format||'bin').toLowerCase()}`;
+          return `
+            <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+              <td class="py-3 px-4 text-sm text-slate-700 font-medium">${a.title}</td>
+              <td class="py-3 px-4">
+                <span class="text-xs font-semibold text-violet-600 bg-violet-50 px-2 py-1 rounded-full">${a.courseTitle}</span>
+              </td>
+              <td class="py-3 px-4 text-xs text-slate-400">${date}</td>
+              <td class="py-3 px-4">
+                <button onclick="downloadFile('${a.fileUrl.replace(/'/g,"\\'")}', '${dlName.replace(/'/g,"\\'")}' )"
+                  class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-violet-600 hover:bg-violet-700 px-3 py-1.5 rounded-lg transition cursor-pointer">
+                  ${icon} Download ${ext}
+                </button>
+              </td>
+            </tr>`;
+        }).join('');
+
+        return `
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-100 mb-4 overflow-hidden">
+            <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center font-bold text-violet-700 text-sm">
+                ${name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p class="font-bold text-slate-800 text-sm">${name}</p>
+                <p class="text-xs text-slate-400">${email}</p>
+              </div>
+              <span class="ml-auto text-xs font-bold bg-violet-600 text-white px-2.5 py-1 rounded-full">${entries.length} file${entries.length !== 1 ? 's' : ''}</span>
+            </div>
+            <table class="w-full">
+              <thead>
+                <tr class="text-left">
+                  <th class="py-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Title</th>
+                  <th class="py-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Course</th>
+                  <th class="py-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Submitted</th>
+                  <th class="py-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">File</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Authenticated file download (streams via backend proxy) ─────────
+    async function downloadFile(fileUrl, filename) {
+      try {
+        const proxyUrl = `${API}/progress/download?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(filename)}`;
+        const res = await fetch(proxyUrl, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Download failed');
+        const blob = await res.blob();
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      } catch (err) {
+        alert('Download failed: ' + err.message);
+      }
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+    loadMyCourses();
+  </script>
+</body>
+</html>

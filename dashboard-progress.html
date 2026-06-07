@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Progress — UMT LMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .progress-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+
+  <nav class="bg-white shadow-sm px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <span class="text-white font-bold">U</span>
+      </div>
+      <span class="font-bold text-slate-800">UMT LMS</span>
+      <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold ml-2">Student</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span id="userName" class="text-sm text-slate-600 font-medium"></span>
+      <a href="dashboard-student.html" class="text-sm font-semibold text-indigo-500 hover:text-indigo-700">← Back to Dashboard</a>
+      <button onclick="logout()" class="text-sm font-semibold text-red-500 hover:text-red-700">Logout</button>
+    </div>
+  </nav>
+
+  <div class="bg-white border-b border-slate-100 px-8">
+    <div class="flex gap-0 max-w-6xl mx-auto">
+      <button onclick="showTab('overview')" id="tab-overview"
+        class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-indigo-600 text-indigo-600">
+        Overview
+      </button>
+      <button onclick="showTab('courses')" id="tab-courses"
+        class="tab-btn px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700">
+        Per-Course Progress
+      </button>
+    </div>
+  </div>
+
+  <main class="max-w-6xl mx-auto p-8">
+
+    <div id="pane-overview">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-slate-800">My Academic Progress</h2>
+        <button onclick="loadAll()" class="text-sm text-indigo-600 font-semibold hover:underline">↻ Refresh</button>
+      </div>
+      <div id="stat-cards" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        <div class="col-span-3 text-center py-10 text-slate-400 text-sm">Loading stats…</div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h3 class="text-lg font-bold text-slate-700 mb-5">Course Completion Overview</h3>
+        <div id="course-bars">
+          <div class="text-center py-8 text-slate-400 text-sm">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pane-courses" class="hidden">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-extrabold text-slate-800">Per-Course Progress</h2>
+        <button onclick="loadAll()" class="text-sm text-indigo-600 font-semibold hover:underline">↻ Refresh</button>
+      </div>
+      <div class="mb-4">
+        <select id="course-select" onchange="renderCourseDetail()"
+          class="border border-slate-200 px-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-indigo-400 outline-none min-w-[280px]">
+          <option value="">— Select a course —</option>
+        </select>
+      </div>
+      <div id="course-detail-panel">
+        <div class="text-slate-400 text-sm py-6">Select a course above to view details.</div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/config.js"></script>
+  <script>
+    const API   = window.API_URL;
+    const token = localStorage.getItem('lms_token');
+    const user  = JSON.parse(localStorage.getItem('lms_user') || 'null');
+
+    if (!token || !user) { window.location.href = 'index.html'; }
+    if (user && user.role !== 'student') { window.location.href = 'dashboard-admin.html'; }
+    document.getElementById('userName').textContent = user?.name || '';
+
+    let progressData = [];
+    let summaryStats = {};
+
+    function showTab(name) {
+      ['overview', 'courses'].forEach(t => {
+        document.getElementById(`pane-${t}`).classList.toggle('hidden', t !== name);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === name) {
+          btn.classList.add('border-indigo-600', 'text-indigo-600');
+          btn.classList.remove('border-transparent', 'text-slate-500');
+        } else {
+          btn.classList.remove('border-indigo-600', 'text-indigo-600');
+          btn.classList.add('border-transparent', 'text-slate-500');
+        }
+      });
+    }
+
+    async function loadAll() {
+      try {
+        const res = await fetch(`${API}/progress/my`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        progressData = data.records || [];
+        summaryStats = data.stats   || {};
+        renderStatCards();
+        renderCourseBars();
+        populateCourseSelect();
+        // Only re-render detail if a course is currently selected
+        if (document.getElementById('course-select').value !== '') {
+            renderCourseDetail();
+        }
+      } catch (err) {
+        document.getElementById('stat-cards').innerHTML =
+          `<div class="col-span-3 text-red-500 text-sm text-center py-8">Failed to load progress: ${err.message}</div>`;
+      }
+    }
+
+    function renderStatCards() {
+      const { totalCourses = 0, avgCompletion = 0, totalSubmissions = 0 } = summaryStats;
+      const cards = [
+        { label: 'Enrolled Courses',   value: totalCourses,                           icon: '📚', color: 'bg-indigo-50 border-indigo-200',  text: 'text-indigo-700' },
+        { label: 'Avg. Completion',     value: `${avgCompletion}%`,                   icon: '📈', color: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+        { label: 'Total Submissions',   value: totalSubmissions,                      icon: '📝', color: 'bg-sky-50 border-sky-200',         text: 'text-sky-700' },
+      ];
+      document.getElementById('stat-cards').innerHTML = cards.map(c => `
+        <div class="stat-card ${c.color} border rounded-2xl p-5 flex flex-col gap-1 shadow-sm">
+          <div class="text-2xl">${c.icon}</div>
+          <div class="text-3xl font-extrabold ${c.text}">${c.value}</div>
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">${c.label}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderCourseBars() {
+      const el = document.getElementById('course-bars');
+      if (!progressData.length) {
+        el.innerHTML = `<div class="text-slate-400 text-sm py-6 text-center">You haven't enrolled in any courses yet.</div>`;
+        return;
+      }
+      el.innerHTML = progressData.map(r => {
+        const pct       = r.completionPercentage || 0;
+        const submitted = r.submittedAssignments || 0;
+        // Prevent 1/0 bug in bars
+        const total     = Math.max(r.totalAssignments || 0, submitted);
+        const barColor  = pct === 100 ? 'bg-emerald-500' : pct >= 50 ? 'bg-indigo-500' : 'bg-amber-400';
+        return `
+          <div class="mb-5">
+            <div class="flex justify-between items-end mb-1.5">
+              <div>
+                <span class="font-semibold text-slate-700 text-sm">${r.course?.title || 'Course'}</span>
+                <span class="ml-2 text-[10px] uppercase tracking-wider text-slate-400 font-bold">${r.course?.category || ''}</span>
+              </div>
+              <div class="flex items-center gap-4 text-xs text-slate-500">
+                <span>📝 ${submitted}/${total}</span>
+                <span class="font-bold ${pct === 100 ? 'text-emerald-600' : 'text-indigo-600'}">${pct}%</span>
+              </div>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-3">
+              <div class="progress-fill ${barColor} h-3 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function populateCourseSelect() {
+      const sel = document.getElementById('course-select');
+      // Save the current selection so it doesn't reset on refresh
+      const currentSelection = sel.value; 
+      
+      sel.innerHTML = '<option value="">— Select a course —</option>';
+      progressData.forEach((r, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = r.course?.title || `Course ${i + 1}`;
+        sel.appendChild(opt);
+      });
+      
+      // Restore the selection
+      sel.value = currentSelection;
+    }
+
+    function renderCourseDetail() {
+      const idx   = document.getElementById('course-select').value;
+      const panel = document.getElementById('course-detail-panel');
+      if (idx === '') {
+        panel.innerHTML = '<div class="text-slate-400 text-sm py-6">Select a course above to view details.</div>';
+        return;
+      }
+      const r        = progressData[parseInt(idx)];
+      const pct      = r.completionPercentage || 0;
+      const submitted = r.submittedAssignments || 0;
+      // Prevent 1/0 bug in detail panel
+      const total     = Math.max(r.totalAssignments || 0, submitted);
+      const modules  = r.completedModules || [];
+      const logs     = (r.activityLog || []).slice(-8).reverse();
+      const barColor = pct === 100 ? 'bg-emerald-500' : pct >= 50 ? 'bg-indigo-500' : 'bg-amber-400';
+
+      panel.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-5">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-xl font-extrabold text-slate-800">${r.course?.title || 'Course'}</h3>
+              <p class="text-sm text-slate-500 mt-1">${r.course?.description || ''}</p>
+            </div>
+            <span class="text-xs font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full">
+              ${r.course?.category || 'General'}
+            </span>
+          </div>
+          <div class="flex justify-between text-sm font-semibold text-slate-600 mb-1">
+            <span>Overall Completion</span>
+            <span class="${pct === 100 ? 'text-emerald-600' : 'text-indigo-600'}">${pct}%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-4">
+            <div class="progress-fill ${barColor} h-4 rounded-full" style="width: ${pct}%"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-2 gap-4 mb-5">
+          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+            <div class="text-2xl font-extrabold text-emerald-700">${modules.length}</div>
+            <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mt-1">Modules Done</div>
+          </div>
+          <div class="bg-sky-50 border border-sky-200 rounded-xl p-4 text-center">
+            <div class="text-2xl font-extrabold text-sky-700">${submitted} / ${total}</div>
+            <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold mt-1">Assignments Submitted</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-5">
+          <h4 class="font-bold text-slate-700 mb-4">Completed Modules</h4>
+          ${modules.length
+            ? `<ul class="space-y-2">${modules.map(m => `
+                <li class="flex items-center gap-3 text-sm text-slate-600">
+                  <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span>
+                  <span>${m.moduleTitle || 'Module'}</span>
+                  <span class="ml-auto text-slate-400 text-xs">${new Date(m.completedAt).toLocaleDateString()}</span>
+                  <button onclick="unmarkModuleDone('${r.course?._id}', '${m.moduleId}')" class="text-slate-300 hover:text-red-500 transition-colors ml-2" title="Undo completion">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </li>`).join('')}</ul>`
+            : `<p class="text-slate-400 text-sm">No modules completed yet.</p>`}
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-5">
+          <h4 class="font-bold text-slate-700 mb-4">Recent Activity</h4>
+          ${logs.length
+            ? `<ul class="space-y-2">${logs.map(l => `
+                <li class="flex items-start gap-3 text-sm text-slate-600 border-b border-slate-50 pb-2">
+                  <span class="text-slate-400 text-xs mt-0.5 min-w-[90px]">${new Date(l.timestamp).toLocaleDateString()}</span>
+                  <span class="font-medium text-indigo-600">${_formatAction(l.action)}</span>
+                  <span class="text-slate-500">${l.detail || ''}</span>
+                </li>`).join('')}</ul>`
+            : `<p class="text-slate-400 text-sm">No activity recorded yet.</p>`}
+        </div>
+
+        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5">
+          <h4 class="font-bold text-indigo-700 mb-3">Mark Module as Completed</h4>
+          <div class="flex gap-3 flex-wrap">
+            <select id="module-select-${r.course?._id}"
+              class="border border-slate-200 px-3 py-2 rounded-lg text-sm outline-none flex-1 min-w-[200px]">
+              <option value="">— Select a module —</option>
+              ${(r.course?.modules || []).map(m => `
+                <option value="${m._id}" data-title="${m.title}">${m.title}</option>`).join('')}
+            </select>
+            <button onclick="markModuleDone('${r.course?._id}', '${idx}')"
+              class="bg-indigo-600 text-white text-sm font-semibold px-5 py-2 rounded-lg hover:bg-indigo-700 transition">
+              Mark Complete
+            </button>
+          </div>
+          <p id="module-done-msg-${r.course?._id}" class="text-sm mt-2 hidden"></p>
+        </div>`;
+    }
+
+    async function markModuleDone(courseId, idx) {
+      const sel      = document.getElementById(`module-select-${courseId}`);
+      const moduleId    = sel.value;
+      const moduleTitle = sel.options[sel.selectedIndex]?.dataset?.title || 'Module';
+      const msgEl    = document.getElementById(`module-done-msg-${courseId}`);
+      if (!moduleId) { alert('Please select a module first.'); return; }
+
+      try {
+        const res = await fetch(`${API}/progress/course/${courseId}/complete-module`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body:    JSON.stringify({ moduleId, moduleTitle }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error');
+        msgEl.textContent = `✓ Marked complete! Completion: ${data.completionPercentage}%`;
+        msgEl.className   = 'text-sm mt-2 text-emerald-600';
+        setTimeout(() => msgEl.classList.add('hidden'), 4000);
+        await loadAll();
+      } catch (err) {
+        msgEl.textContent = `Error: ${err.message}`;
+        msgEl.className   = 'text-sm mt-2 text-red-500';
+      }
+    }
+
+    // New function to unmark modules
+    async function unmarkModuleDone(courseId, moduleId) {
+      if (!confirm('Are you sure you want to unmark this module?')) return;
+      try {
+        const res = await fetch(`${API}/progress/course/${courseId}/uncomplete-module`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body:    JSON.stringify({ moduleId }),
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Error unmarking module');
+        }
+        await loadAll();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function _formatAction(action) {
+      const map = {
+        module_completed:     '📦 Module completed',
+        module_uncompleted:   '⏪ Module unmarked', 
+        metrics_updated:      '📊 Metrics updated',
+        assignment_submitted: '📝 Assignment submitted',
+        module_viewed:        '👁 Module viewed',
+      };
+      return map[action] || action;
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+    loadAll();
+  </script>
+</body>
+</html>
