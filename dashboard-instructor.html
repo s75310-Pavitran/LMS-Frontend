@@ -7,6 +7,165 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Cloudinary Upload Widget -->
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+
+<!-- ════════════════════════════════════════════════════════════════════
+       AEDDY CUSTOM STYLING (INSTRUCTOR) — internal CSS only, no HTML/JS changed.
+       Theme: professional "instructor" vibe — violet base, with a different
+       accent colour per page: My Courses = violet, Create = teal, Submissions = amber.
+       Delete this whole <style> block to revert.
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <style>
+    /* ---- 0. Theme tokens ---- */
+    :root{
+      --brand:#7c3aed;        /* violet */
+      --brand-2:#a855f7;      /* purple */
+      --ink:#1e293b;
+      --muted:#64748b;
+    }
+
+    /* ---- 1. Page background: violet professional gradient ---- */
+    body{
+      background:
+        radial-gradient(1100px 540px at 10% -10%, #ede9fe 0%, rgba(237,233,254,0) 60%),
+        radial-gradient(900px 520px at 100% 0%, #f3e8ff 0%, rgba(243,232,255,0) 55%),
+        linear-gradient(180deg,#f8f7ff 0%, #f1eefb 100%) !important;
+      background-attachment: fixed !important;
+    }
+
+    /* ---- 2. NAVBAR: centred, bigger, sticky ---- */
+    nav{
+      position:sticky !important; top:0 !important; z-index:50 !important;
+      height:96px !important; justify-content:center !important;
+      background:rgba(255,255,255,0.82) !important; backdrop-filter:blur(10px);
+      box-shadow:0 6px 24px -12px rgba(124,58,237,.35) !important;
+      border-bottom:1px solid #ece7fb;
+    }
+    nav > div:first-child{
+      flex-direction:row !important; align-items:center !important; gap:14px !important;
+      animation:aeddyPop .7s cubic-bezier(.2,.8,.2,1.25) both;
+    }
+    @keyframes aeddyPop{
+      0%{opacity:0; transform:translateY(10px) scale(.7);}
+      60%{opacity:1; transform:translateY(0) scale(1.06);}
+      100%{opacity:1; transform:translateY(0) scale(1);}
+    }
+    nav > div:first-child > div{
+      width:48px !important; height:48px !important; border-radius:15px !important;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2)) !important;
+      box-shadow:0 8px 20px -6px rgba(124,58,237,.6) !important;
+    }
+    nav > div:first-child > div > span{ font-size:24px !important; }
+
+    /* Full official names via CSS content */
+    nav > div:first-child > span:nth-of-type(1){ font-size:0 !important; line-height:1 !important; text-align:left; }
+    nav > div:first-child > span:nth-of-type(1)::before{
+      content:"UNIVERSITI MALAYSIA TERENGGANU"; display:block;
+      font-size:19px !important; font-weight:800; letter-spacing:1.4px;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    nav > div:first-child > span:nth-of-type(1)::after{
+      content:"LEARNING MANAGEMENT SYSTEM"; display:block;
+      font-size:10px !important; font-weight:700; letter-spacing:3.2px;
+      color:var(--muted); margin-top:3px;
+    }
+    nav > div:first-child > span:nth-of-type(2){
+      background:linear-gradient(135deg,#ede9fe,#f3e8ff) !important; color:var(--brand) !important;
+      font-weight:800 !important; box-shadow:0 2px 8px -2px rgba(124,58,237,.4);
+    }
+
+    /* Account card on the right */
+    nav > div:last-child{
+      position:absolute !important; right:28px; top:50%; transform:translateY(-50%);
+      gap:10px !important; background:#fff; border:1px solid #ece7fb;
+      padding:8px 14px !important; border-radius:14px;
+      box-shadow:0 6px 18px -10px rgba(30,41,59,.35);
+    }
+    nav > div:last-child #userName{ color:var(--ink) !important; font-weight:700 !important; }
+    nav > div:last-child button{ background:#fff1f2; color:#e11d48 !important; padding:5px 12px; border-radius:9px; transition:.18s; }
+    nav > div:last-child button:hover{ background:#ffe4e6; }
+
+    /* ---- 3. TAB BAR sticky under navbar ---- */
+    nav + div{
+      position:sticky !important; top:96px !important; z-index:40 !important;
+      background:rgba(255,255,255,0.9) !important; backdrop-filter:blur(8px);
+      box-shadow:0 4px 16px -12px rgba(30,41,59,.4);
+    }
+    .tab-btn{ border-radius:10px 10px 0 0; transition:.18s; }
+    .tab-btn:hover{ background:#f3e8ff; }
+
+    /* ---- 4. Centre section titles + Refresh pill ---- */
+    main h2.font-extrabold{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6{ position:relative; justify-content:center !important; }
+    main .flex.justify-between.items-center.mb-6 > h2{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6 > :not(h2){
+      position:absolute !important; right:0; top:50%; transform:translateY(-50%);
+    }
+    main .flex.justify-between.items-center.mb-6 > button{
+      background:#f3e8ff; color:var(--brand) !important; padding:8px 16px; border-radius:999px;
+      box-shadow:0 4px 12px -6px rgba(124,58,237,.5); transition:.18s;
+    }
+    main .flex.justify-between.items-center.mb-6 > button:hover{ background:#ede9fe; transform:translateY(-50%) scale(1.04); }
+
+    /* ---- 5. Cards polish ---- */
+    main .bg-white.rounded-2xl{
+      border-radius:20px !important;
+      transition:transform .2s ease, box-shadow .2s ease;
+      position:relative; overflow:hidden;
+    }
+    main .bg-white.rounded-2xl:hover{ transform:translateY(-3px); box-shadow:0 18px 34px -18px rgba(124,58,237,.45) !important; }
+    main{ animation:aeddyFade .5s ease both; }
+    @keyframes aeddyFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+    /* ════════ PER-PAGE ACCENTS (different colour & vibe per tab) ════════ */
+
+    /* My Courses (image 4) — VIOLET vibe */
+    #pane-courses .bg-white.rounded-2xl::before{
+      content:""; position:absolute; top:0; left:0; right:0; height:4px;
+      background:linear-gradient(90deg,#7c3aed,#a855f7);
+    }
+
+    /* Create Course (image 5) — TEAL / EMERALD vibe (fresh, "new") */
+    #pane-create h2.font-extrabold{ color:#0f766e !important; }
+    #pane-create .bg-white.rounded-2xl{
+      background:linear-gradient(180deg,#f0fdfa 0%, #ffffff 60%) !important;
+      border-color:#ccfbf1 !important;
+    }
+    #pane-create input:focus, #pane-create textarea:focus{
+      box-shadow:0 0 0 3px rgba(20,184,166,.3) !important; border-color:#14b8a6 !important;
+    }
+    /* recolour the violet "Create Course" button to teal to match the page vibe */
+    #pane-create .bg-violet-600{
+      background:linear-gradient(135deg,#14b8a6,#0d9488) !important;
+      box-shadow:0 10px 22px -10px rgba(13,148,136,.6) !important;
+    }
+    #pane-create .bg-violet-600:hover{ filter:brightness(.96); }
+
+    /* Submissions (image 6) — AMBER / ORANGE vibe (attention / inbox) */
+    #pane-submissions h2.font-extrabold{ color:#b45309 !important; }
+    #pane-submissions .bg-white.rounded-2xl{
+      background:linear-gradient(180deg,#fffbeb 0%, #ffffff 60%) !important;
+      border-color:#fef3c7 !important;
+    }
+    #pane-submissions .border-dashed{
+      border-color:#fcd34d !important;
+      background:linear-gradient(180deg,#fffbeb 0%, rgba(255,255,255,0) 100%);
+      border-radius:18px !important;
+    }
+    #pane-submissions select:focus{ box-shadow:0 0 0 3px rgba(245,158,11,.3) !important; border-color:#f59e0b !important; }
+
+    /* ---- 6. Small-screen safety ---- */
+    @media (max-width:680px){
+      nav{ height:auto !important; padding:12px 14px !important; justify-content:space-between !important; }
+      nav > div:first-child > span:nth-of-type(1)::before{ font-size:14px !important; letter-spacing:.6px; }
+      nav > div:first-child > span:nth-of-type(1)::after{ font-size:8px !important; letter-spacing:1.6px; }
+      nav > div:last-child{ position:static !important; transform:none; box-shadow:none; border:none; padding:0 !important; }
+      nav + div{ top:0 !important; }
+      main .flex.justify-between.items-center.mb-6{ flex-direction:column; gap:12px; }
+      main .flex.justify-between.items-center.mb-6 > :not(h2){ position:static !important; transform:none; }
+    }
+  </style>
+
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
 

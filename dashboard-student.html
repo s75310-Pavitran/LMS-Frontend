@@ -5,6 +5,208 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student Dashboard — UMT LMS</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- ════════════════════════════════════════════════════════════════════
+       AEDDY CUSTOM STYLING (STUDENT)  — internal CSS only, no HTML/JS changed
+       Everything below is additive. Delete this whole <style> block to revert.
+       Theme: friendly "student" vibe — soft indigo / sky / lavender.
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <style>
+
+    /* ---- 0. Theme tokens for the student pages ---- */
+    :root{
+      --brand:#4f46e5;          /* indigo  */
+      --brand-2:#0ea5e9;        /* sky     */
+      --brand-soft:#eef2ff;
+      --ink:#1e293b;
+      --muted:#64748b;
+    }
+
+    /* ---- 1. Page background: soft student gradient instead of flat gray ---- */
+    body{
+      background:
+        radial-gradient(1100px 540px at 12% -8%, #e0e7ff 0%, rgba(224,231,255,0) 60%),
+        radial-gradient(900px 520px at 100% 0%, #cffafe 0%, rgba(207,250,254,0) 55%),
+        linear-gradient(180deg,#f6f8ff 0%, #eef2fb 100%) !important;
+      background-attachment: fixed !important;
+    }
+
+    /* ---- 2. NAVBAR: centered, bigger, sticky, with a soft glass look ---- */
+    nav{
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 50 !important;
+      height: 96px !important;
+      justify-content: center !important;     /* brand sits in the centre */
+      background: rgba(255,255,255,0.82) !important;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 24px -12px rgba(79,70,229,.35) !important;
+      border-bottom: 1px solid #e6e9f5;
+    }
+
+    /* Brand block -> horizontal centred lockup, pops in on login */
+    nav > div:first-child{
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 14px !important;
+      animation: aeddyPop .7s cubic-bezier(.2,.8,.2,1.25) both;
+    }
+    @keyframes aeddyPop{
+      0%{ opacity:0; transform: translateY(10px) scale(.7); }
+      60%{ opacity:1; transform: translateY(0) scale(1.06); }
+      100%{ opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    /* Logo "U" tile: bigger + gradient + glow */
+    nav > div:first-child > div{
+      width:48px !important; height:48px !important;
+      border-radius:15px !important;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2)) !important;
+      box-shadow:0 8px 20px -6px rgba(79,70,229,.6) !important;
+    }
+    nav > div:first-child > div > span{ font-size:24px !important; }
+
+    /* Replace short "UMT LMS" text with the FULL official names (CSS content) */
+    nav > div:first-child > span:nth-of-type(1){
+      font-size:0 !important;          /* hide original short text, keep it in DOM */
+      line-height:1 !important;
+      text-align:left;
+    }
+    nav > div:first-child > span:nth-of-type(1)::before{
+      content:"UNIVERSITI MALAYSIA TERENGGANU";
+      display:block;
+      font-size:19px !important;
+      font-weight:800;
+      letter-spacing:1.4px;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    nav > div:first-child > span:nth-of-type(1)::after{
+      content:"LEARNING MANAGEMENT SYSTEM";
+      display:block;
+      font-size:10px !important;
+      font-weight:700;
+      letter-spacing:3.2px;
+      color:var(--muted);
+      margin-top:3px;
+    }
+
+    /* Role badge ("Student") -> pill that reads as the login type */
+    nav > div:first-child > span:nth-of-type(2){
+      background:linear-gradient(135deg,#e0e7ff,#cffafe) !important;
+      color:var(--brand) !important;
+      font-weight:800 !important;
+      letter-spacing:.4px;
+      box-shadow:0 2px 8px -2px rgba(79,70,229,.4);
+    }
+
+    /* Right-hand account area -> pinned right, styled like a small account card */
+    nav > div:last-child{
+      position:absolute !important;
+      right:28px; top:50%;
+      transform:translateY(-50%);
+      gap:10px !important;
+      background:#ffffff;
+      border:1px solid #e6e9f5;
+      padding:8px 14px !important;
+      border-radius:14px;
+      box-shadow:0 6px 18px -10px rgba(30,41,59,.35);
+    }
+    nav > div:last-child #userName{
+      color:var(--ink) !important;
+      font-weight:700 !important;
+    }
+    nav > div:last-child a{               /* "Back to Dashboard" link, if present */
+      color:var(--brand) !important;
+    }
+    nav > div:last-child button{
+      background:#fff1f2; color:#e11d48 !important;
+      padding:5px 12px; border-radius:9px;
+      transition:.18s;
+    }
+    nav > div:last-child button:hover{ background:#ffe4e6; }
+
+    /* ---- 3. TAB BAR: make it stick right under the navbar while scrolling ---- */
+    nav + div{
+      position: sticky !important;
+      top: 96px !important;                 /* == navbar height above */
+      z-index: 40 !important;
+      background: rgba(255,255,255,0.9) !important;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px -12px rgba(30,41,59,.4);
+    }
+    /* tab pills: a touch more playful */
+    .tab-btn{ border-radius:10px 10px 0 0; transition:.18s; }
+    .tab-btn:hover{ background:#eef2ff; }
+
+    /* ---- 4. Section headers: centre the title, float Refresh right as a pill ---- */
+    main h2.font-extrabold{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6{
+      position:relative;
+      justify-content:center !important;
+    }
+    main .flex.justify-between.items-center.mb-6 > h2{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6 > :not(h2){
+      position:absolute !important; right:0; top:50%;
+      transform:translateY(-50%);
+    }
+    /* the Refresh button rendered as a pill */
+    main .flex.justify-between.items-center.mb-6 > button{
+      background:#eef2ff; color:var(--brand) !important;
+      padding:8px 16px; border-radius:999px;
+      box-shadow:0 4px 12px -6px rgba(79,70,229,.5);
+      transition:.18s;
+    }
+    main .flex.justify-between.items-center.mb-6 > button:hover{
+      background:#e0e7ff; transform:translateY(-50%) scale(1.04);
+    }
+
+    /* ---- 5. Course cards: student vibe — lift, gradient accent strip ---- */
+    main .grid > div.bg-white{
+      border-radius:20px !important;
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+      position:relative; overflow:hidden;
+    }
+    main .grid > div.bg-white::before{        /* top accent strip */
+      content:""; position:absolute; top:0; left:0; right:0; height:4px;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));
+      opacity:0; transition:.2s;
+    }
+    main .grid > div.bg-white:hover{
+      transform:translateY(-4px);
+      box-shadow:0 18px 36px -18px rgba(79,70,229,.5) !important;
+    }
+    main .grid > div.bg-white:hover::before{ opacity:1; }
+
+    /* category chip on cards a little more colourful */
+    main .grid .bg-indigo-50{
+      background:linear-gradient(135deg,#e0e7ff,#ede9fe) !important;
+    }
+
+    /* summary stat cards pop a bit */
+    #summary-content .grid > div{ transition:transform .2s ease, box-shadow .2s ease; }
+    #summary-content .grid > div:hover{
+      transform:translateY(-3px);
+      box-shadow:0 16px 30px -18px rgba(79,70,229,.5) !important;
+    }
+
+    /* gentle entrance for the page body content */
+    main{ animation: aeddyFade .5s ease both; }
+    @keyframes aeddyFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+    /* ---- 6. Small-screen safety: relax the centred/absolute layout ---- */
+    @media (max-width:680px){
+      nav{ height:auto !important; padding:12px 14px !important; justify-content:space-between !important; }
+      nav > div:first-child{ flex-direction:row !important; }
+      nav > div:first-child > span:nth-of-type(1)::before{ font-size:14px !important; letter-spacing:.6px; }
+      nav > div:first-child > span:nth-of-type(1)::after{ font-size:8px !important; letter-spacing:1.6px; }
+      nav > div:last-child{ position:static !important; transform:none; box-shadow:none; border:none; padding:0 !important; }
+      nav + div{ top:0 !important; }
+      main .flex.justify-between.items-center.mb-6{ flex-direction:column; gap:12px; }
+      main .flex.justify-between.items-center.mb-6 > :not(h2){ position:static !important; transform:none; }
+    }
+  </style>
+
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
 

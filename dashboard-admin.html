@@ -5,6 +5,174 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard — UMT LMS</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  
+<!-- ════════════════════════════════════════════════════════════════════
+       AEDDY CUSTOM STYLING (ADMIN) — internal CSS only, no HTML/JS changed.
+       Goal: kill the "boring" flat look. Lively rose identity + a distinct
+       accent per page: Overview = rose/pink, Users = indigo, Courses = emerald,
+       Add User = amber. Vibrant gradient stat cards.
+       Delete this whole <style> block to revert.
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <style>
+    /* ---- 0. Theme tokens ---- */
+    :root{
+      --brand:#e11d48;        /* rose */
+      --brand-2:#fb7185;      /* pink */
+      --ink:#1e293b;
+      --muted:#64748b;
+    }
+
+    /* ---- 1. Lively page background ---- */
+    body{
+      background:
+        radial-gradient(1100px 560px at 8% -10%, #ffe4e6 0%, rgba(255,228,230,0) 60%),
+        radial-gradient(950px 540px at 100% -5%, #fae8ff 0%, rgba(250,232,255,0) 55%),
+        radial-gradient(900px 600px at 50% 120%, #e0e7ff 0%, rgba(224,231,255,0) 55%),
+        linear-gradient(180deg,#fff5f6 0%, #f6f4ff 100%) !important;
+      background-attachment: fixed !important;
+    }
+
+    /* ---- 2. NAVBAR: centred, bigger, sticky, vibrant ---- */
+    nav{
+      position:sticky !important; top:0 !important; z-index:50 !important;
+      height:96px !important; justify-content:center !important;
+      background:rgba(255,255,255,0.82) !important; backdrop-filter:blur(10px);
+      box-shadow:0 6px 24px -12px rgba(225,29,72,.4) !important;
+      border-bottom:1px solid #fbe3e7;
+    }
+    nav > div:first-child{
+      flex-direction:row !important; align-items:center !important; gap:14px !important;
+      animation:aeddyPop .7s cubic-bezier(.2,.8,.2,1.25) both;
+    }
+    @keyframes aeddyPop{
+      0%{opacity:0; transform:translateY(10px) scale(.7);}
+      60%{opacity:1; transform:translateY(0) scale(1.06);}
+      100%{opacity:1; transform:translateY(0) scale(1);}
+    }
+    nav > div:first-child > div{
+      width:48px !important; height:48px !important; border-radius:15px !important;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2)) !important;
+      box-shadow:0 8px 20px -6px rgba(225,29,72,.6) !important;
+    }
+    nav > div:first-child > div > span{ font-size:24px !important; }
+
+    /* Full official names via CSS content */
+    nav > div:first-child > span:nth-of-type(1){ font-size:0 !important; line-height:1 !important; text-align:left; }
+    nav > div:first-child > span:nth-of-type(1)::before{
+      content:"UNIVERSITI MALAYSIA TERENGGANU"; display:block;
+      font-size:19px !important; font-weight:800; letter-spacing:1.4px;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    nav > div:first-child > span:nth-of-type(1)::after{
+      content:"LEARNING MANAGEMENT SYSTEM"; display:block;
+      font-size:10px !important; font-weight:700; letter-spacing:3.2px;
+      color:var(--muted); margin-top:3px;
+    }
+    nav > div:first-child > span:nth-of-type(2){
+      background:linear-gradient(135deg,#ffe4e6,#fae8ff) !important; color:var(--brand) !important;
+      font-weight:800 !important; box-shadow:0 2px 8px -2px rgba(225,29,72,.4);
+    }
+
+    /* Account card on the right */
+    nav > div:last-child{
+      position:absolute !important; right:28px; top:50%; transform:translateY(-50%);
+      gap:10px !important; background:#fff; border:1px solid #fbe3e7;
+      padding:8px 14px !important; border-radius:14px;
+      box-shadow:0 6px 18px -10px rgba(30,41,59,.35);
+    }
+    nav > div:last-child #userName{ color:var(--ink) !important; font-weight:700 !important; }
+    nav > div:last-child button{ background:#fff1f2; color:#e11d48 !important; padding:5px 12px; border-radius:9px; transition:.18s; }
+    nav > div:last-child button:hover{ background:#ffe4e6; }
+
+    /* ---- 3. TAB BAR sticky under navbar ---- */
+    nav + div{
+      position:sticky !important; top:96px !important; z-index:40 !important;
+      background:rgba(255,255,255,0.9) !important; backdrop-filter:blur(8px);
+      box-shadow:0 4px 16px -12px rgba(30,41,59,.4);
+    }
+    .tab-btn{ border-radius:10px 10px 0 0; transition:.18s; }
+    .tab-btn:hover{ background:#ffe4e6; }
+
+    /* ---- 4. Centre section titles + Refresh / controls floated right ---- */
+    main h2.font-extrabold{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6{ position:relative; justify-content:center !important; }
+    main .flex.justify-between.items-center.mb-6 > h2{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6 > :not(h2){
+      position:absolute !important; right:0; top:50%; transform:translateY(-50%);
+    }
+
+    /* ---- 5. VIBRANT stat cards (System Overview) ---- */
+    #stats-grid > div{
+      border:none !important;
+      border-radius:20px !important;
+      color:#fff !important;
+      transition:transform .2s ease, box-shadow .2s ease;
+      position:relative; overflow:hidden;
+    }
+    #stats-grid > div:hover{ transform:translateY(-4px); }
+    #stats-grid > div > div:first-child{ color:#fff !important; }      /* the big number */
+    #stats-grid > div > div:last-child{ color:rgba(255,255,255,.85) !important; } /* label */
+    #stats-grid > div:nth-child(1){ background:linear-gradient(135deg,#6366f1,#3b82f6) !important; box-shadow:0 16px 30px -16px rgba(59,130,246,.7) !important; }
+    #stats-grid > div:nth-child(2){ background:linear-gradient(135deg,#10b981,#059669) !important; box-shadow:0 16px 30px -16px rgba(16,185,129,.7) !important; }
+    #stats-grid > div:nth-child(3){ background:linear-gradient(135deg,#8b5cf6,#7c3aed) !important; box-shadow:0 16px 30px -16px rgba(139,92,246,.7) !important; }
+    #stats-grid > div:nth-child(4){ background:linear-gradient(135deg,#f59e0b,#f97316) !important; box-shadow:0 16px 30px -16px rgba(249,115,22,.7) !important; }
+
+    /* Recent Users / Recent Courses panels */
+    main .bg-white.rounded-2xl{ border-radius:20px !important; transition:box-shadow .2s ease, transform .2s ease; }
+    main .bg-white.rounded-2xl:hover{ box-shadow:0 18px 34px -20px rgba(225,29,72,.4) !important; }
+    main{ animation:aeddyFade .5s ease both; }
+    @keyframes aeddyFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+    /* ════════ PER-PAGE ACCENTS ════════ */
+
+    /* System Overview — rose headings */
+    #pane-overview h2.font-extrabold{
+      background:linear-gradient(90deg,#e11d48,#fb7185);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+
+    /* User Management — INDIGO vibe */
+    #pane-users h2.font-extrabold{ color:#4338ca !important; }
+    #pane-users thead{ background:linear-gradient(90deg,#eef2ff,#e0e7ff) !important; }
+    #pane-users thead th{ color:#4338ca !important; }
+    #pane-users input:focus, #pane-users select:focus{ box-shadow:0 0 0 3px rgba(99,102,241,.3) !important; border-color:#6366f1 !important; }
+    #pane-users tbody tr:hover{ background:#eef2ff !important; }
+
+    /* Course Management — EMERALD vibe */
+    #pane-courses h2.font-extrabold{ color:#047857 !important; }
+    #pane-courses thead{ background:linear-gradient(90deg,#ecfdf5,#d1fae5) !important; }
+    #pane-courses thead th{ color:#047857 !important; }
+    #pane-courses input:focus, #pane-courses select:focus{ box-shadow:0 0 0 3px rgba(16,185,129,.3) !important; border-color:#10b981 !important; }
+    #pane-courses tbody tr:hover{ background:#ecfdf5 !important; }
+    #pane-courses .text-rose-600{ color:#059669 !important; }   /* recolour the Refresh link */
+
+    /* Add User — AMBER vibe */
+    #pane-add-user h2.font-extrabold{ color:#b45309 !important; }
+    #pane-add-user .bg-white.rounded-2xl{
+      background:linear-gradient(180deg,#fffbeb 0%, #ffffff 55%) !important;
+      border-color:#fef3c7 !important;
+    }
+    #pane-add-user input:focus, #pane-add-user select:focus{ box-shadow:0 0 0 3px rgba(245,158,11,.3) !important; border-color:#f59e0b !important; }
+    /* recolour the rose "Create User" button to amber to match the page */
+    #pane-add-user .bg-rose-600{
+      background:linear-gradient(135deg,#f59e0b,#f97316) !important;
+      box-shadow:0 10px 22px -10px rgba(249,115,22,.6) !important;
+    }
+    #pane-add-user .bg-rose-600:hover{ filter:brightness(.96); }
+
+    /* ---- 6. Small-screen safety ---- */
+    @media (max-width:680px){
+      nav{ height:auto !important; padding:12px 14px !important; justify-content:space-between !important; }
+      nav > div:first-child > span:nth-of-type(1)::before{ font-size:14px !important; letter-spacing:.6px; }
+      nav > div:first-child > span:nth-of-type(1)::after{ font-size:8px !important; letter-spacing:1.6px; }
+      nav > div:last-child{ position:static !important; transform:none; box-shadow:none; border:none; padding:0 !important; }
+      nav + div{ top:0 !important; }
+      main .flex.justify-between.items-center.mb-6{ flex-direction:column; gap:12px; }
+      main .flex.justify-between.items-center.mb-6 > :not(h2){ position:static !important; transform:none; }
+    }
+  </style>
+
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
 

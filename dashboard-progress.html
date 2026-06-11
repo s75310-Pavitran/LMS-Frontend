@@ -5,11 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Progress — UMT LMS</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
+  
+<style>
     .progress-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
     .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
     .stat-card:hover { transform: translateY(-2px); }
+
+    /* ════════════════════════════════════════════════════════════════════
+       AEDDY CUSTOM STYLING (STUDENT — PROGRESS PAGE) — internal CSS only.
+       Matches the student dashboard so the experience is consistent.
+       Delete from this banner down to the end of these rules to revert.
+    ═══════════════════════════════════════════════════════════════════════ */
+
+    /* ---- 0. Theme tokens (same as student dashboard) ---- */
+    :root{ --brand:#4f46e5; --brand-2:#0ea5e9; --ink:#1e293b; --muted:#64748b; }
+
+    /* ---- 1. Page background ---- */
+    body{
+      background:
+        radial-gradient(1100px 540px at 12% -8%, #e0e7ff 0%, rgba(224,231,255,0) 60%),
+        radial-gradient(900px 520px at 100% 0%, #cffafe 0%, rgba(207,250,254,0) 55%),
+        linear-gradient(180deg,#f6f8ff 0%, #eef2fb 100%) !important;
+      background-attachment: fixed !important;
+    }
+
+    /* ---- 2. NAVBAR centred + bigger + sticky ---- */
+    nav{
+      position: sticky !important; top:0 !important; z-index:50 !important;
+      height:96px !important; justify-content:center !important;
+      background:rgba(255,255,255,0.82) !important; backdrop-filter:blur(10px);
+      box-shadow:0 6px 24px -12px rgba(79,70,229,.35) !important;
+      border-bottom:1px solid #e6e9f5;
+    }
+    nav > div:first-child{
+      flex-direction:row !important; align-items:center !important; gap:14px !important;
+      animation:aeddyPop .7s cubic-bezier(.2,.8,.2,1.25) both;
+    }
+    @keyframes aeddyPop{
+      0%{opacity:0; transform:translateY(10px) scale(.7);}
+      60%{opacity:1; transform:translateY(0) scale(1.06);}
+      100%{opacity:1; transform:translateY(0) scale(1);}
+    }
+    nav > div:first-child > div{
+      width:48px !important; height:48px !important; border-radius:15px !important;
+      background:linear-gradient(135deg,var(--brand),var(--brand-2)) !important;
+      box-shadow:0 8px 20px -6px rgba(79,70,229,.6) !important;
+    }
+    nav > div:first-child > div > span{ font-size:24px !important; }
+
+    /* Full official names via CSS content */
+    nav > div:first-child > span:nth-of-type(1){ font-size:0 !important; line-height:1 !important; text-align:left; }
+    nav > div:first-child > span:nth-of-type(1)::before{
+      content:"UNIVERSITI MALAYSIA TERENGGANU"; display:block;
+      font-size:19px !important; font-weight:800; letter-spacing:1.4px;
+      background:linear-gradient(90deg,var(--brand),var(--brand-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    nav > div:first-child > span:nth-of-type(1)::after{
+      content:"LEARNING MANAGEMENT SYSTEM"; display:block;
+      font-size:10px !important; font-weight:700; letter-spacing:3.2px;
+      color:var(--muted); margin-top:3px;
+    }
+    nav > div:first-child > span:nth-of-type(2){
+      background:linear-gradient(135deg,#e0e7ff,#cffafe) !important; color:var(--brand) !important;
+      font-weight:800 !important; box-shadow:0 2px 8px -2px rgba(79,70,229,.4);
+    }
+
+    /* Account card on the right (name + back link + logout) */
+    nav > div:last-child{
+      position:absolute !important; right:28px; top:50%; transform:translateY(-50%);
+      gap:10px !important; background:#fff; border:1px solid #e6e9f5;
+      padding:8px 14px !important; border-radius:14px;
+      box-shadow:0 6px 18px -10px rgba(30,41,59,.35);
+    }
+    nav > div:last-child #userName{ color:var(--ink) !important; font-weight:700 !important; }
+    nav > div:last-child a{ color:var(--brand) !important; }
+    nav > div:last-child button{ background:#fff1f2; color:#e11d48 !important; padding:5px 12px; border-radius:9px; transition:.18s; }
+    nav > div:last-child button:hover{ background:#ffe4e6; }
+
+    /* ---- 3. TAB BAR sticky under navbar ---- */
+    nav + div{
+      position:sticky !important; top:96px !important; z-index:40 !important;
+      background:rgba(255,255,255,0.9) !important; backdrop-filter:blur(8px);
+      box-shadow:0 4px 16px -12px rgba(30,41,59,.4);
+    }
+    .tab-btn{ border-radius:10px 10px 0 0; transition:.18s; }
+    .tab-btn:hover{ background:#eef2ff; }
+
+    /* ---- 4. Centre section titles + Refresh pill ---- */
+    main h2.font-extrabold{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6{ position:relative; justify-content:center !important; }
+    main .flex.justify-between.items-center.mb-6 > h2{ text-align:center; }
+    main .flex.justify-between.items-center.mb-6 > :not(h2){
+      position:absolute !important; right:0; top:50%; transform:translateY(-50%);
+    }
+    main .flex.justify-between.items-center.mb-6 > button{
+      background:#eef2ff; color:var(--brand) !important; padding:8px 16px; border-radius:999px;
+      box-shadow:0 4px 12px -6px rgba(79,70,229,.5); transition:.18s;
+    }
+    main .flex.justify-between.items-center.mb-6 > button:hover{ background:#e0e7ff; transform:translateY(-50%) scale(1.04); }
+
+    /* ---- 5. Cards & content polish ---- */
+    main .bg-white.rounded-2xl{ border-radius:20px !important; transition:box-shadow .2s ease, transform .2s ease; }
+    main .bg-white.rounded-2xl:hover{ box-shadow:0 16px 32px -20px rgba(79,70,229,.45) !important; }
+    main{ animation:aeddyFade .5s ease both; }
+    @keyframes aeddyFade{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+    /* ---- 6. Small-screen safety ---- */
+    @media (max-width:680px){
+      nav{ height:auto !important; padding:12px 14px !important; justify-content:space-between !important; }
+      nav > div:first-child > span:nth-of-type(1)::before{ font-size:14px !important; letter-spacing:.6px; }
+      nav > div:first-child > span:nth-of-type(1)::after{ font-size:8px !important; letter-spacing:1.6px; }
+      nav > div:last-child{ position:static !important; transform:none; box-shadow:none; border:none; padding:0 !important; flex-wrap:wrap; }
+      nav + div{ top:0 !important; }
+      main .flex.justify-between.items-center.mb-6{ flex-direction:column; gap:12px; }
+      main .flex.justify-between.items-center.mb-6 > :not(h2){ position:static !important; transform:none; }
+    }
   </style>
+
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
 
